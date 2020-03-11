@@ -5,18 +5,32 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] List<WaveConfig> waveConfigs;
-    int startingWave = 0;
+    [SerializeField] int startingWave = 0;
+    [SerializeField] bool looping = false;
     // Start is called before the first frame update
-    void Start()
+    IEnumerator Start()
     {
-        var currentWave = waveConfigs[startingWave];
-        StartCoroutine(SpawnAllEnemiesInWave(currentWave));
+        do
+        {
+            yield return StartCoroutine(SpawnAllWaves());
+        }
+        while (looping);
+    }
+    
+    private IEnumerator SpawnAllWaves()
+    {
+        for(int i = startingWave; i< waveConfigs.Count;i++)
+        {
+            var currentWave = waveConfigs[i];
+            yield return StartCoroutine(SpawnAllEnemiesInWave(currentWave));
+        }
     }
     private IEnumerator SpawnAllEnemiesInWave(WaveConfig waveConfig)
     {
         for (int i = 0; i < waveConfig.getNumberOfEnemies(); i++)
         {
-            Instantiate(waveConfig.getEnemyPrefab(), waveConfig.getWaypoints()[0].transform.position, Quaternion.identity);
+            var newEnemy = Instantiate(waveConfig.getEnemyPrefab(), waveConfig.getWaypoints()[0].transform.position, Quaternion.identity);
+            newEnemy.GetComponent<EnemyPathing>().SetWaveConfig(waveConfig);
             yield return new WaitForSeconds(waveConfig.getTimeBetweenSpawns());
         }
     }
